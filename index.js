@@ -11,6 +11,8 @@ function delay(time) {
 }
 
 (async () => {
+
+  // Initialisation
   const browser = await puppeteer.launch({ headless : false, defaultViewport: null});
   const page = await browser.newPage();
 
@@ -31,14 +33,26 @@ function delay(time) {
 
   await delay(2000);
 
+  // Words learning
   let dico = await page.evaluate(() => {
+    let motsBrut = []
     let mots = []
     let els = document.querySelectorAll(".thing.text-text > .col.text > .text");
     els.forEach(e => {
-      mots.push(e.innerText)
+      motsBrut.push(e.innerText)
     })
+    for(let i=0; i<motsBrut.length; i=i+2) {
+      mots.push({
+        original: motsBrut[i],
+        translated: motsBrut[i+1]
+      })
+    }
     return mots
   });
+
+  // Main loop
+  await page.click("a.btn.btn-light-green");
+
 
   console.log(dico)
   
