@@ -29,11 +29,18 @@ function delay(time) {
   let selector = "a[href='"+ current_course + "']" 
   await page.click(selector);
 
-  let data = await page.evaluate(() => {
-    return document.querySelector(".thing.text-text > .col.text > .text").innerHTML;
+  await delay(2000);
+
+  let dico = await page.evaluate(() => {
+    let mots = []
+    let els = document.querySelectorAll(".thing.text-text > .col.text > .text");
+    els.forEach(e => {
+      mots.push(e.innerText)
+    })
+    return mots
   });
 
-  console.log(data)
+  console.log(dico)
   
   
   
