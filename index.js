@@ -53,8 +53,37 @@ function delay(time) {
   // Main loop
   await page.click("a.btn.btn-light-green");
 
+  await delay(2000);
 
-  console.log(dico)
+  let currentWord = await page.evaluate(() => {
+    let e = document.querySelector("h2.sc-9f618z-2.jIuOsE");
+    return e.innerText
+  });
+
+  let letterCase = await page.evaluate(() => {
+    let e = document.querySelector(".sc-ojuw87-1.kclydn");
+    if (e) {
+      return e.innerText 
+    }
+    return null
+  });
+
+  let wordCase = await page.evaluate(() => {
+    let e = document.querySelector(".sc-1opiu1v-0.dzOzSf");
+    if (e) {
+      return e.innerText 
+    }
+    return null
+  });
+
+  const currentWordSplited = currentWord.split("");
+  /*if (letterCase) {
+    for(let i=0; i<currentWordSplited.length; i++) {
+      await page.click("button[data-testid=typing-response-" + currentWordSplited[i] + "-2");
+    }
+  }*/
+
+  
   
   
   
