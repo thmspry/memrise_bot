@@ -20,6 +20,7 @@
   "homepage": "https://github.com/thmspry/memrise_bot#readme",
   "dependencies": {
     "dotenv": "^10.0.0",
+    "install": "^0.13.0",
     "puppeteer": "^10.4.0"
   }
 }
