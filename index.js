@@ -26,6 +26,7 @@ function getTranslation(dico, word) {
 }
 
 (async () => {
+  
   // Initialisation
   const browser = await puppeteer.launch({
     headless: false,
@@ -67,25 +68,24 @@ function getTranslation(dico, word) {
     return mots;
   });
 
-  
+  // Go to test
   try {
     await page.click("a.btn.btn-light-green");
   } catch (error) {
-    console.log("No light green button :", error);
+    try {
+      await page.click(".actions.actions-right > a");
+    } catch (error) {
+      console.log("No button :", error);
+    }
   }
-
-  try {
-    await page.click(".actions.actions-right > a");
-  } catch (error) {
-    console.log("No simple button :", error);
-  }
+  
 
   // Main loop
   while (true) {
     let end = null;
 
     while (end == null) {
-      await delay(1500);
+      await delay(50);
 
       let currentWord = await page.evaluate(() => {
         let e = document.querySelector("h2.sc-9f618z-2.jIuOsE");
@@ -119,7 +119,6 @@ function getTranslation(dico, word) {
         return null;
       });
 
-
       let errorCase = await page.evaluate(() => {
         let e = document.querySelector(".sc-bdfBQB.kMSUVe .sc-kEjbQP.fznHZw");
         if (e) {
@@ -130,8 +129,6 @@ function getTranslation(dico, word) {
         }
         return null;
       })
-
-      console.log("error case :", errorCase)
 
       let translation = getTranslation(dico, currentWord);
 
@@ -174,6 +171,13 @@ function getTranslation(dico, word) {
         await page.click(".sc-bdfBQB.kMSUVe")
       }
 
+      try {
+        await page.click(".sc-bdfBQB.hwxFJf");
+      } catch (error) {
+      }
+
+      
+
       end = await page.evaluate(() => {
         let e = document.querySelector(".sc-e5k3hh-5.bhEYJf");
         if (e) {
@@ -183,8 +187,6 @@ function getTranslation(dico, word) {
       });
     }
 
-    
-
     await page.goto(course_url, { waitUntil: "networkidle2" });
 
     await page.click(selector);
@@ -192,13 +194,11 @@ function getTranslation(dico, word) {
     try {
       await page.click("a.btn.btn-light-green");
     } catch (error) {
-      console.log("No light green button :", error);
-    }
-
-    try {
-      await page.click(".actions.actions-right > a");
-    } catch (error) {
-      console.log("No simple button :", error);
+      try {
+        await page.click(".actions.actions-right > a");
+      } catch (error) {
+        console.log("No button :", error);
+      }
     }
 
     end = null;
