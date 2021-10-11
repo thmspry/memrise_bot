@@ -119,6 +119,20 @@ function getTranslation(dico, word) {
         return null;
       });
 
+
+      let errorCase = await page.evaluate(() => {
+        let e = document.querySelector(".sc-bdfBQB.kMSUVe .sc-kEjbQP.fznHZw");
+        if (e) {
+          if (e.innerText.includes("Suivant")) {
+            return e.innerText;
+          }
+          return null;
+        }
+        return null;
+      })
+
+      console.log("error case :", errorCase)
+
       let translation = getTranslation(dico, currentWord);
 
       if (letterCase) {
@@ -156,6 +170,10 @@ function getTranslation(dico, word) {
         }, translation);
       }
 
+      if(errorCase) {
+        await page.click(".sc-bdfBQB.kMSUVe")
+      }
+
       end = await page.evaluate(() => {
         let e = document.querySelector(".sc-e5k3hh-5.bhEYJf");
         if (e) {
@@ -164,6 +182,8 @@ function getTranslation(dico, word) {
         return null;
       });
     }
+
+    
 
     await page.goto(course_url, { waitUntil: "networkidle2" });
 
