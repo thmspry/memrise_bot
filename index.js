@@ -35,10 +35,8 @@ function getTranslation(dico, word) {
 
   await page.goto(memrise_url, { waitUntil: "networkidle2" });
 
-  await page.type("input[id='username']", process.env.USER_NAME, { delay: 1 });
-  await page.type("input[id='password']", process.env.USER_PASSWORD, {
-    delay: 1,
-  });
+  await page.type("input[id='username']", process.env.USER_NAME);
+  await page.type("input[id='password']", process.env.USER_PASSWORD);
   await page.click("button[data-testid='signinFormSubmit']");
 
   await delay(2000);
@@ -69,7 +67,7 @@ function getTranslation(dico, word) {
     return mots;
   });
 
-  // Main loop
+  
   try {
     await page.click("a.btn.btn-light-green");
   } catch (error) {
@@ -82,11 +80,12 @@ function getTranslation(dico, word) {
     console.log("No simple button :", error);
   }
 
+  // Main loop
   while (true) {
     let end = null;
 
     while (end == null) {
-      await delay(2000);
+      await delay(1500);
 
       let currentWord = await page.evaluate(() => {
         let e = document.querySelector("h2.sc-9f618z-2.jIuOsE");
@@ -123,17 +122,17 @@ function getTranslation(dico, word) {
       let translation = getTranslation(dico, currentWord);
 
       if (letterCase) {
-        await page.type(".sc-ojuw87-2.TpKoe", translation, { delay: 1 });
+        await page.type(".sc-ojuw87-2.TpKoe", translation);
         await page.click(".sc-bdfBQB.kMSUVe");
       }
 
       if (wordCase) {
         const translationSplited = translation.split(" ");
         for (i = 0; i < translationSplited.length; i++) {
-          await delay(100);
+          delay(100);
           await page.evaluate(
             (translationSplited, i) => {
-              let els = document.querySelectorAll(".sc-1i3aukn-0.eJVwvp");
+              let els = document.querySelectorAll(".sc-7v3i35-1.cmZgNh > .sc-1i3aukn-0.eJVwvp");
               els.forEach((e) => {
                 if (e.innerText == translationSplited[i]) {
                   e.click();
@@ -158,7 +157,7 @@ function getTranslation(dico, word) {
       }
 
       end = await page.evaluate(() => {
-        let e = document.querySelector(".sc-gsTEea.jASKWk");
+        let e = document.querySelector(".sc-e5k3hh-5.bhEYJf");
         if (e) {
           return e.innerText;
         }
