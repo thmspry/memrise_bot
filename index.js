@@ -40,7 +40,7 @@ function getTranslation(dico, word) {
   await page.type("input[id='password']", process.env.USER_PASSWORD);
   await page.click("button[data-testid='signinFormSubmit']");
 
-  await delay(2000);
+  await delay(5000); // value to be modified according to your internet connection speed
   await page.goto(course_url, { waitUntil: "networkidle2" });
   await page.click(".cc-btn.cc-allow");
 
@@ -49,7 +49,7 @@ function getTranslation(dico, word) {
   let selector = "a[href='" + current_course + "']";
   await page.click(selector);
 
-  await delay(2000);
+  await delay(2000); // value to be modified according to your internet connection speed
 
   // Words learning
   let dico = await page.evaluate(() => {
@@ -85,7 +85,7 @@ function getTranslation(dico, word) {
     let end = null;
 
     while (end == null) {
-      await delay(50);
+      await delay(25); // value to be modified according to your internet connection speed
 
       let currentWord = await page.evaluate(() => {
         let e = document.querySelector("h2.sc-9f618z-2.jIuOsE");
@@ -93,6 +93,8 @@ function getTranslation(dico, word) {
           return e.innerText;
         }
         return null;
+
+
       });
 
       let letterCase = await page.evaluate(() => {
@@ -133,14 +135,16 @@ function getTranslation(dico, word) {
       let translation = getTranslation(dico, currentWord);
 
       if (letterCase) {
-        await page.type(".sc-ojuw87-2.TpKoe", translation);
+        try {
+          await page.type(".sc-ojuw87-2.TpKoe", translation);
+        } catch {}
         await page.click(".sc-bdfBQB.kMSUVe");
       }
 
       if (wordCase) {
         const translationSplited = translation.split(" ");
+
         for (i = 0; i < translationSplited.length; i++) {
-          delay(100);
           await page.evaluate(
             (translationSplited, i) => {
               let els = document.querySelectorAll(".sc-7v3i35-1.cmZgNh > .sc-1i3aukn-0.eJVwvp");
@@ -150,8 +154,7 @@ function getTranslation(dico, word) {
                 }
               });
             },
-            translationSplited,
-            i
+            translationSplited,i
           );
         }
       }
@@ -173,10 +176,7 @@ function getTranslation(dico, word) {
 
       try {
         await page.click(".sc-bdfBQB.hwxFJf");
-      } catch (error) {
-      }
-
-      
+      } catch (error) {}
 
       end = await page.evaluate(() => {
         let e = document.querySelector(".sc-e5k3hh-5.bhEYJf");
