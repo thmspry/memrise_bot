@@ -1,33 +1,71 @@
 const puppeteer = require("puppeteer");
+
+/**--------------------------
+ * ---- GLOBAL VARIABLES ----
+ * --------------------------
+ */
+
 require("dotenv").config();
-
 const memrise_url = "https://app.memrise.com/signin";
-const course_url =
-  "https://app.memrise.com/course/2233959/3a-s1-polytech-nantes/";
+const course_url = process.env.COURSE_URL;
 
-function delay(time) {
+/**--------------------------
+ * ---- USEFUL FUNCTIONS ----
+ * --------------------------
+ */
+
+/**
+ * Pause the process
+ * @param time : number time in milliseconds
+ * @returns {Promise<unknown>}
+ */
+async function delay(time) {
   return new Promise(function (resolve) {
     setTimeout(resolve, time);
   });
 }
 
+/**
+ * Give the translation of a word
+ * @param dico the dictionary of words
+ * @param word : string the word to be translated
+ * @returns {string} the translation
+ */
 function getTranslation(dico, word) {
   let res = "";
   dico.forEach((w) => {
-    if (w.original == word) {
+    if (w.original === word) {
       res = w.translated;
     }
-
-    if (w.translated == word) {
+    if (w.translated === word) {
       res = w.original;
     }
   });
   return res;
 }
 
+/**
+ * Macro to launch test in revising mode
+ * @param page
+ * @returns {Promise<void>}
+ */
+async function chooseRevisingMode(page) {
+  try {
+    await page.click(".button.small.dropdown-toggle");
+    await page.click("a[accesskey='o']");
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+
+/**---------------------
+ * ---- BOT PROCESS ----
+ * ---------------------
+ */
 (async () => {
-  
-  // Initialisation
+
+  // STEP 1 : Initialisation
   const browser = await puppeteer.launch({
     headless: false,
     defaultViewport: null,
@@ -36,14 +74,16 @@ function getTranslation(dico, word) {
 
   await page.goto(memrise_url, { waitUntil: "networkidle2" });
 
+  // Login Memrise
   await page.type("input[id='username']", process.env.USER_NAME);
   await page.type("input[id='password']", process.env.USER_PASSWORD);
   await page.click("button[data-testid='signinFormSubmit']");
 
   await delay(5000); // value to be modified according to your internet connection speed
   await page.goto(course_url, { waitUntil: "networkidle2" });
-  await page.click(".cc-btn.cc-allow");
+  await page.click(".cc-btn.cc-allow"); // Allow cookies
 
+  // Go to first test in the course
   let pathname = "/" + course_url.split("/").splice(3, 3).join("/") + "/";
   let current_course = pathname + "1/";
   let selector = "a[href='" + current_course + "']";
@@ -51,158 +91,70 @@ function getTranslation(dico, word) {
 
   await delay(2000); // value to be modified according to your internet connection speed
 
-  // Words learning
+  // STEP 2 : Words learning
   let dico = await page.evaluate(() => {
-    let motsBrut = [];
-    let mots = [];
+    let rawWords = [];
+    let words = [];
     let els = document.querySelectorAll(".thing.text-text > .col.text > .text");
     els.forEach((e) => {
-      motsBrut.push(e.innerText);
+      rawWords.push(e.innerText);
     });
-    for (let i = 0; i < motsBrut.length; i = i + 2) {
-      mots.push({
-        original: motsBrut[i],
-        translated: motsBrut[i + 1],
+    for (let i = 0; i < rawWords.length; i = i + 2) {
+      words.push({
+        original: rawWords[i],
+        translated: rawWords[i + 1],
       });
     }
-    return mots;
+    return words;
   });
 
-  // Go to test
-  try {
-    await page.click("a.btn.btn-light-green");
-  } catch (error) {
-    try {
-      await page.click(".actions.actions-right > a");
-    } catch (error) {
-      console.log("No button :", error);
-    }
-  }
-  
+  console.log(dico.length + " words learned !")
+  await delay(1000);
 
-  // Main loop
+
+  // STEP 3 : Go to test, in revising mode
+  await chooseRevisingMode(page);
+
+
+  await delay(4000); // value to be modified according to your internet connection speed
+
+
+  // STEP 4 : Main loop
   while (true) {
-    let end = null;
+    let currentWord = "something";
 
-    while (end == null) {
-      await delay(25); // value to be modified according to your internet connection speed
+    await delay(2000); // value to be modified according to your internet connection speed
 
-      let currentWord = await page.evaluate(() => {
-        let e = document.querySelector("h2.sc-9f618z-2.jIuOsE");
-        if (e) {
-          return e.innerText;
-        }
-        return null;
+    while (currentWord != null) { // Loop for each question
 
-
-      });
-
-      let letterCase = await page.evaluate(() => {
-        let e = document.querySelector(".sc-ojuw87-1.kclydn");
+      currentWord = await page.evaluate(() => { // Get the current word in the question
+        let e = document.querySelector("h2.sc-af59h9-2.hDpNkj");
         if (e) {
           return e.innerText;
         }
         return null;
       });
 
-      let wordCase = await page.evaluate(() => {
-        let e = document.querySelector(".sc-7v3i35-1.cmZgNh");
-        if (e) {
-          return e.innerText;
-        }
-        return null;
-      });
+      let translation = getTranslation(dico, currentWord);  // Get the answer of the question
 
-      let sentenceCase = await page.evaluate(() => {
-        let e = document.querySelector(".sc-1opiu1v-0.dzOzSf");
-        if (e) {
-          return e.innerText;
-        }
-        return null;
-      });
-
-      let errorCase = await page.evaluate(() => {
-        let e = document.querySelector(".sc-bdfBQB.kMSUVe .sc-kEjbQP.fznHZw");
-        if (e) {
-          if (e.innerText.includes("Suivant")) {
-            return e.innerText;
-          }
-          return null;
-        }
-        return null;
-      })
-
-      let translation = getTranslation(dico, currentWord);
-
-      if (letterCase) {
-        try {
-          await page.type(".sc-ojuw87-2.TpKoe", translation);
-        } catch {}
-        await page.click(".sc-bdfBQB.kMSUVe");
-      }
-
-      if (wordCase) {
-        const translationSplited = translation.split(" ");
-
-        for (i = 0; i < translationSplited.length; i++) {
-          await page.evaluate(
-            (translationSplited, i) => {
-              let els = document.querySelectorAll(".sc-7v3i35-1.cmZgNh > .sc-1i3aukn-0.eJVwvp");
-              els.forEach((e) => {
-                if (e.innerText == translationSplited[i]) {
-                  e.click();
-                }
-              });
-            },
-            translationSplited,i
-          );
-        }
-      }
-
-      if (sentenceCase) {
-        await page.evaluate((translation) => {
-          let els = document.querySelectorAll(".sc-bdfBQB.dvaGCW");
-          els.forEach((e) => {
-            if (e.innerText == translation) {
-              e.click();
-            }
-          });
-        }, translation);
-      }
-
-      if(errorCase) {
-        await page.click(".sc-bdfBQB.kMSUVe")
-      }
-
-      try {
-        await page.click(".sc-bdfBQB.hwxFJf");
-      } catch (error) {}
-
-      end = await page.evaluate(() => {
-        let e = document.querySelector(".sc-e5k3hh-5.bhEYJf");
-        if (e) {
-          return e.innerText;
-        }
-        return null;
-      });
-    }
-
-    await page.goto(course_url, { waitUntil: "networkidle2" });
-
-    await page.click(selector);
-
-    try {
-      await page.click("a.btn.btn-light-green");
-    } catch (error) {
-      try {
-        await page.click(".actions.actions-right > a");
+      try { // Type the answer
+        await page.type("input[data-testid='typing-response-input']", translation);
       } catch (error) {
-        console.log("No button :", error);
+        console.log("Can't type " + translation + " in input")
       }
+
+      await page.keyboard.press('Enter'); // Go to the next quesiton
     }
 
-    end = null;
-  }
+    await delay(1000);
 
+    // Go back to the course page
+    await page.goto(course_url, { waitUntil: "networkidle2" });
+    await page.click(selector);
+    await delay(1000);
+
+    await chooseRevisingMode(page); // Go to revising mode
+
+  }
   //await browser.close();
 })();
