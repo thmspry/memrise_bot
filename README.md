@@ -35,6 +35,8 @@ Replace `course_url` with the Memrise course URL that you want to run in loop.
 
 You can now launch the project with `npm start`.
 
+❗Do not resize the window during the execution, else it will cause errors.
+
 
 ## Adaptability
 

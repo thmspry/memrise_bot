@@ -108,7 +108,7 @@ async function chooseRevisingMode(page) {
     return words;
   });
 
-  console.log(dico.length + " words learned !")
+  console.log(dico.length + " words learned !");
   await delay(1000);
 
 
@@ -128,7 +128,7 @@ async function chooseRevisingMode(page) {
     while (currentWord != null) { // Loop for each question
 
       currentWord = await page.evaluate(() => { // Get the current word in the question
-        let e = document.querySelector("h2.sc-af59h9-2.hDpNkj");
+        let e = document.querySelector("h2.sc-af59h9-2.bPLCxC");
         if (e) {
           return e.innerText;
         }
