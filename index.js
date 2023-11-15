@@ -84,7 +84,7 @@ async function chooseRevisingMode(page) {
   await page.click(".cc-btn.cc-allow"); // Allow cookies
 
   // Go to first test in the course
-  let pathname = "/" + course_url.split("/").splice(3, 3).join("/") + "/";
+  let pathname = "/" + course_url.split("/").splice(3, 4).join("/") + "/";
   let current_course = pathname + "1/";
   let selector = "a[href='" + current_course + "']";
   await page.click(selector);
@@ -128,7 +128,7 @@ async function chooseRevisingMode(page) {
     while (currentWord != null) { // Loop for each question
 
       currentWord = await page.evaluate(() => { // Get the current word in the question
-        let e = document.querySelector("h2.sc-af59h9-2.bPLCxC");
+        let e = document.querySelector("h2[data-testid='learn-prompt-text'] span");
         if (e) {
           return e.innerText;
         }
