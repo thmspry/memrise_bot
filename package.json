@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index"
+    "start": "npx ts-node src/main.ts"
   },
   "repository": {
     "type": "git",
@@ -19,8 +19,10 @@
   },
   "homepage": "https://github.com/thmspry/memrise_bot#readme",
   "dependencies": {
+    "@types/node": "^20.13.0",
+    "@types/puppeteer": "^7.0.4",
     "dotenv": "^10.0.0",
-    "install": "^0.13.0",
-    "puppeteer": "^10.4.0"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
   }
 }
