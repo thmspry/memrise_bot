@@ -4,7 +4,7 @@
   "description": "Bot memrise to be the top of the list",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "start": "npx ts-node src/main.ts"
   },
   "repository": {
@@ -22,7 +22,12 @@
     "@types/node": "^20.13.0",
     "@types/puppeteer": "^7.0.4",
     "dotenv": "^10.0.0",
-    "ts-node": "^10.9.2",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.4",
     "typescript": "^5.4.5"
   }
 }
