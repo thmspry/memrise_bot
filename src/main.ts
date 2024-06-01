@@ -2,7 +2,7 @@ import pptr from 'puppeteer';
 import exp_env_info from './config/expected_env_variables.json';
 import {EnvVariable, EnvVariableInfo} from "./model/EnvVariable";
 import {UrlUtils} from "./utils/url-utils";
-import {DictionaryItem} from "./model/DictionaryItem";
+import {DictionaryItem, Dictionary} from "./model/Dictionary";
 
 function checkEnvVariables(): void {
 
@@ -44,16 +44,17 @@ async function getDictionary(page: pptr.Page): Promise<DictionaryItem[]> {
 
         const tableItems: string[] = els.map((e: Element) => e.innerHTML);
 
-        const dictionary: DictionaryItem[] = [];
 
-        for(let i = 0; i < tableItems.length; i = i + 2) {
+        const dictionaryItems: DictionaryItem[] = [];
+
+        for(let i: number = 0; i < tableItems.length; i = i + 2) {
             const dictionaryItem: DictionaryItem = {
                 original: tableItems[i],
                 translated: tableItems[i + 1]
             }
-            dictionary.push(dictionaryItem);
+            dictionaryItems.push(dictionaryItem);
         }
-        return dictionary;
+        return dictionaryItems;
     });
 }
 
@@ -90,8 +91,9 @@ async function run(): Promise<void> {
     const firstCourseUrl: string = UrlUtils.getFirstCourseUrl(courseUrl);
     await page.goto(firstCourseUrl, { waitUntil: 'networkidle2'});
 
-    const dictionary: DictionaryItem[] = await getDictionary(page);
-    console.log(`${dictionary.length} words learned !`);
+    const dictionaryItems: DictionaryItem[] = await getDictionary(page);
+    const dictionary: Dictionary = new Dictionary(dictionaryItems);
+    console.log(`${dictionary.size()} words learned !`);
 
 
     await delay(1000);
@@ -114,5 +116,3 @@ try {
 } catch (error) {
     console.error(error);
 }
-
-
