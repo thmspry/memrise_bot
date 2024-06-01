@@ -1,6 +1,8 @@
 import pptr from 'puppeteer';
 import exp_env_info from './config/expected_env_variables.json';
 import {EnvVariable, EnvVariableInfo} from "./model/EnvVariable";
+import {UrlUtils} from "./utils/url-utils";
+import {DictionaryItem} from "./model/DictionaryItem";
 
 function checkEnvVariables(): void {
 
@@ -29,15 +31,75 @@ function checkEnvVariables(): void {
     }
 }
 
+
+async function delay(time: number) {
+    return new Promise(function (resolve) {
+        setTimeout(resolve, time);
+    });
+}
+
+async function getDictionary(page: pptr.Page): Promise<DictionaryItem[]> {
+    return await page.evaluate(() => {
+        let els: Element[] = [...document.querySelectorAll(".thing.text-text > .col.text > .text")];
+
+        const tableItems: string[] = els.map((e: Element) => e.innerHTML);
+
+        const dictionary: DictionaryItem[] = [];
+
+        for(let i = 0; i < tableItems.length; i = i + 2) {
+            const dictionaryItem: DictionaryItem = {
+                original: tableItems[i],
+                translated: tableItems[i + 1]
+            }
+            dictionary.push(dictionaryItem);
+        }
+        return dictionary;
+    });
+}
+
+
+async function chooseRevisingMode(page: pptr.Page) {
+    try {
+        await page.click(".button.small.dropdown-toggle");
+        await page.click("a[accesskey='o']");
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 async function run(): Promise<void> {
     const browser: pptr.Browser = await pptr.launch({
         headless: process.env.HEADLESS === 'true',
         defaultViewport: null,
     });
     const page: pptr.Page = await browser.newPage();
-    await page.goto(process.env.COURSE_URL!, { waitUntil: 'networkidle2' });
 
-    await browser.close();
+    const courseUrl: string = process.env.COURSE_URL!;
+
+    await page.goto(courseUrl, { waitUntil: 'networkidle2'});
+
+    // Login
+    await page.type("input[id='username']", process.env.USER_NAME!);
+    await page.type("input[id='password']", process.env.USER_PASSWORD!);
+    await page.click("button[data-testid='signinFormSubmit']");
+
+    await delay(5 * 1000);
+
+    await page.click(".cc-btn.cc-allow"); // Allow cookies
+
+    const firstCourseUrl: string = UrlUtils.getFirstCourseUrl(courseUrl);
+    await page.goto(firstCourseUrl, { waitUntil: 'networkidle2'});
+
+    const dictionary: DictionaryItem[] = await getDictionary(page);
+    console.log(`${dictionary.length} words learned !`);
+
+
+    await delay(1000);
+
+    // STEP 3 : Go to test, in revising mode
+    await chooseRevisingMode(page);
+
+    await delay(4000);
 }
 
 require("dotenv").config({path: "./src/config/.env"});
