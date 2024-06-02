@@ -2,7 +2,7 @@
   "name": "memrise_bot",
   "version": "1.0.0",
   "description": "Bot memrise to be the top of the list",
-  "main": "index.js",
+  "main": "src/main.ts",
   "scripts": {
     "test": "jest",
     "start": "npx ts-node src/main.ts"
