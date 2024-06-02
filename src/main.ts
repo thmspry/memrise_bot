@@ -31,7 +31,6 @@ function checkEnvVariables(): void {
     }
 }
 
-
 async function delay(time: number) {
     return new Promise(function (resolve) {
         setTimeout(resolve, time);
@@ -43,7 +42,6 @@ async function getDictionary(page: pptr.Page): Promise<DictionaryItem[]> {
         let els: Element[] = [...document.querySelectorAll(".thing.text-text > .col.text > .text")];
 
         const tableItems: string[] = els.map((e: Element) => e.innerHTML);
-
 
         const dictionaryItems: DictionaryItem[] = [];
 
@@ -57,7 +55,6 @@ async function getDictionary(page: pptr.Page): Promise<DictionaryItem[]> {
         return dictionaryItems;
     });
 }
-
 
 async function chooseRevisingMode(page: pptr.Page) {
     try {
@@ -73,6 +70,7 @@ async function run(): Promise<void> {
         headless: process.env.HEADLESS === 'true',
         defaultViewport: null,
     });
+
     const page: pptr.Page = await browser.newPage();
 
     const courseUrl: string = process.env.COURSE_URL!;
@@ -95,13 +93,45 @@ async function run(): Promise<void> {
     const dictionary: Dictionary = new Dictionary(dictionaryItems);
     console.log(`${dictionary.size()} words learned !`);
 
-
     await delay(1000);
 
     // STEP 3 : Go to test, in revising mode
     await chooseRevisingMode(page);
 
     await delay(4000);
+
+    // STEP 4 : Loop on test
+    while (true) {
+        let currentWord: string | undefined = "something";
+
+        await delay(2000); // value to be modified according to your internet connection speed
+
+        while (currentWord != null) { // Loop for each question
+
+            currentWord = await page.evaluate(() => { // Get the current word in the question
+                let e: Element | null = document.querySelector('h2[data-testid="learn-prompt-text"] span');
+                return e?.innerHTML;
+            });
+
+            const translation: string = dictionary.getTranslation(currentWord!);  // Get the answer of the question
+
+            try { // Type the answer
+                await page.type("input[data-testid='typing-response-input']", translation);
+            } catch (error) {
+                console.log("Can't type " + translation + " in input")
+            }
+
+            await page.keyboard.press('Enter'); // Go to the next question
+        }
+
+        await delay(1000);
+
+        // Go back to the course page
+        await page.goto(firstCourseUrl, { waitUntil: 'networkidle2'});
+        await delay(1000);
+
+        await chooseRevisingMode(page); // Go to revising mode
+    }
 }
 
 require("dotenv").config({path: "./src/config/.env"});
