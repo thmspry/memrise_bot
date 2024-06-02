@@ -1,8 +1,8 @@
-import pptr from 'puppeteer';
 import exp_env_info from './config/expected_env_variables.json';
 import {EnvVariable, EnvVariableInfo} from "./model/EnvVariable";
 import {UrlUtils} from "./utils/url-utils";
 import {DictionaryItem, Dictionary} from "./model/Dictionary";
+import {PuppeteerAbstraction} from "./model/PuppeteerAbstraction";
 
 function checkEnvVariables(): void {
 
@@ -31,106 +31,56 @@ function checkEnvVariables(): void {
     }
 }
 
-async function delay(time: number) {
-    return new Promise(function (resolve) {
-        setTimeout(resolve, time);
-    });
-}
-
-async function getDictionary(page: pptr.Page): Promise<DictionaryItem[]> {
-    return await page.evaluate(() => {
-        let els: Element[] = [...document.querySelectorAll(".thing.text-text > .col.text > .text")];
-
-        const tableItems: string[] = els.map((e: Element) => e.innerHTML);
-
-        const dictionaryItems: DictionaryItem[] = [];
-
-        for(let i: number = 0; i < tableItems.length; i = i + 2) {
-            const dictionaryItem: DictionaryItem = {
-                original: tableItems[i],
-                translated: tableItems[i + 1]
-            }
-            dictionaryItems.push(dictionaryItem);
-        }
-        return dictionaryItems;
-    });
-}
-
-async function chooseRevisingMode(page: pptr.Page) {
-    try {
-        await page.click(".button.small.dropdown-toggle");
-        await page.click("a[accesskey='o']");
-    } catch (error) {
-        console.log(error);
-    }
-}
-
 async function run(): Promise<void> {
-    const browser: pptr.Browser = await pptr.launch({
-        headless: process.env.HEADLESS === 'true',
-        defaultViewport: null,
-    });
 
-    const page: pptr.Page = await browser.newPage();
-
+    // STEP 0 : Create Bot
+    const bot: PuppeteerAbstraction = await PuppeteerAbstraction.create();
     const courseUrl: string = process.env.COURSE_URL!;
+    await bot.goTo(courseUrl);
 
-    await page.goto(courseUrl, { waitUntil: 'networkidle2'});
+    // STEP 1 : Login
+    await bot.type("input[id='username']", process.env.USER_NAME!);
+    await bot.type("input[id='password']", process.env.USER_PASSWORD!);
+    await bot.click("button[data-testid='signinFormSubmit']");
+    await bot.wait(5);
+    await bot.click(".cc-btn.cc-allow"); // Allow cookies
 
-    // Login
-    await page.type("input[id='username']", process.env.USER_NAME!);
-    await page.type("input[id='password']", process.env.USER_PASSWORD!);
-    await page.click("button[data-testid='signinFormSubmit']");
-
-    await delay(5 * 1000);
-
-    await page.click(".cc-btn.cc-allow"); // Allow cookies
-
+    // STEP 2 : Go to the first course
     const firstCourseUrl: string = UrlUtils.getFirstCourseUrl(courseUrl);
-    await page.goto(firstCourseUrl, { waitUntil: 'networkidle2'});
+    await bot.goTo(firstCourseUrl);
 
-    const dictionaryItems: DictionaryItem[] = await getDictionary(page);
+    // STEP 3 : Learn the words
+    const dictionaryItems: DictionaryItem[] = await bot.getDictionary();
     const dictionary: Dictionary = new Dictionary(dictionaryItems);
     console.log(`${dictionary.size()} words learned !`);
+    await bot.wait(1);
 
-    await delay(1000);
+    // STEP 4 : Go to test, in revising mode
+    await bot.chooseRevisingMode();
+    await bot.wait(4);
 
-    // STEP 3 : Go to test, in revising mode
-    await chooseRevisingMode(page);
-
-    await delay(4000);
-
-    // STEP 4 : Loop on test
+    // STEP 5 : Loop on test
     while (true) {
         let currentWord: string | undefined = "something";
-
-        await delay(2000); // value to be modified according to your internet connection speed
+        await bot.wait(2);
 
         while (currentWord != null) { // Loop for each question
-
-            currentWord = await page.evaluate(() => { // Get the current word in the question
-                let e: Element | null = document.querySelector('h2[data-testid="learn-prompt-text"] span');
-                return e?.innerHTML;
-            });
-
+            currentWord = await bot.getOnPage('h2[data-testid="learn-prompt-text"] span');
             const translation: string = dictionary.getTranslation(currentWord!);  // Get the answer of the question
 
-            try { // Type the answer
-                await page.type("input[data-testid='typing-response-input']", translation);
-            } catch (error) {
-                console.log("Can't type " + translation + " in input")
-            }
+            await bot.type("input[data-testid='typing-response-input']", translation)
+                .catch(() => console.log("Error while typing the answer"));
 
-            await page.keyboard.press('Enter'); // Go to the next question
+            await bot.hitEnter(); // Go to next question
         }
 
-        await delay(1000);
+        await bot.wait(1);
 
         // Go back to the course page
-        await page.goto(firstCourseUrl, { waitUntil: 'networkidle2'});
-        await delay(1000);
+        await bot.goTo(firstCourseUrl);
+        await bot.wait(1);
 
-        await chooseRevisingMode(page); // Go to revising mode
+        await bot.chooseRevisingMode(); // Go to revising mode
     }
 }
 
