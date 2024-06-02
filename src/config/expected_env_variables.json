@@ -1,0 +1,18 @@
+[
+  {
+    "name": "USER_NAME",
+    "description": "The username used to log in to the Memrise account"
+  },
+  {
+    "name": "USER_PASSWORD",
+    "description": "The password used to log in to the Memrise account"
+  },
+  {
+    "name": "COURSE_URL",
+    "description": "The URL of the Memrise course"
+  },
+  {
+    "name": "HEADLESS",
+    "description": "Boolean value to indicate if the browser should be shown or not during the execution. \"true\" for no, \"false\" for yes"
+  }
+]
