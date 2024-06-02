@@ -1,4 +1,4 @@
-import pptr from 'puppeteer';
+import * as pptr from 'puppeteer';
 import {DictionaryItem} from "./Dictionary";
 
 export class PuppeteerAbstraction {
